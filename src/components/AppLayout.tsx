@@ -1,21 +1,21 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  Home, Radio, SlidersHorizontal, Bookmark, BarChart2, Settings,
-  Zap, LogOut, ChevronLeft, ChevronRight, Menu, X, Loader2
+  Rss, SlidersHorizontal, Bookmark, BarChart2, Settings,
+  Zap, LogOut, Menu, X, Loader2, LayoutDashboard
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const NAV_ITEMS = [
-  { href: "/feed", icon: Home, label: "Feed" },
-  { href: "/sources", icon: Radio, label: "Sources" },
+  { href: "/feed", icon: LayoutDashboard, label: "Feed" },
+  { href: "/sources", icon: Rss, label: "Sources" },
   { href: "/filters", icon: SlidersHorizontal, label: "Filters" },
   { href: "/saved", icon: Bookmark, label: "Saved" },
-  { href: "/runs", icon: BarChart2, label: "Run History" },
+  { href: "/runs", icon: BarChart2, label: "Runs" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
@@ -24,7 +24,6 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const location = useLocation();
@@ -34,7 +33,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const handleRunNow = async () => {
     if (!profile?.gemini_api_key) {
-      toast({ title: "No Gemini API key", description: "Add your Gemini API key in Settings first.", variant: "destructive" });
+      toast({ title: "No API key set", description: "Add your Gemini API key in Settings.", variant: "destructive" });
       navigate("/settings");
       return;
     }
@@ -44,7 +43,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         body: { user_id: user?.id },
       });
       if (error) throw error;
-      toast({ title: "✅ Digest run complete!", description: `Fetched ${data?.total_fetched ?? 0} articles, ${data?.total_passed ?? 0} passed filters.` });
+      toast({ title: "Digest complete", description: `${data?.total_fetched ?? 0} fetched · ${data?.total_passed ?? 0} passed` });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
       toast({ title: "Run failed", description: message, variant: "destructive" });
@@ -57,91 +56,82 @@ export default function AppLayout({ children }: AppLayoutProps) {
     navigate("/login");
   };
 
-  const SidebarContent = () => (
+  const NavContent = ({ onNav }: { onNav?: () => void }) => (
     <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className={cn("flex items-center gap-3 px-4 py-5 border-b border-sidebar-border", collapsed && "justify-center px-2")}>
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-          <span className="text-lg">📜</span>
-        </div>
-        {!collapsed && (
-          <div className="overflow-hidden">
-            <h1 className="font-display font-bold text-sm text-sidebar-foreground leading-tight">Boon Scroll</h1>
-            <p className="text-xs text-sidebar-foreground/40">AI digest</p>
+      {/* Wordmark */}
+      <div className="px-5 pt-5 pb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-5 h-5 rounded-sm bg-foreground flex items-center justify-center flex-shrink-0">
+            <span className="text-background text-[10px] font-bold leading-none">B</span>
           </div>
-        )}
+          <span className="text-sm font-semibold tracking-tight text-foreground">Boon Scroll</span>
+        </div>
       </div>
 
-      {/* Run Now */}
-      <div className={cn("p-3 border-b border-sidebar-border", collapsed && "p-2")}>
-        <Button
+      {/* Run button */}
+      <div className="px-3 pb-3">
+        <button
           onClick={handleRunNow}
           disabled={running}
           className={cn(
-            "w-full font-semibold text-sm transition-all duration-200",
-            "bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow",
-            collapsed && "p-2 aspect-square"
+            "w-full flex items-center justify-center gap-2 h-8 rounded-md text-xs font-medium transition-all duration-150",
+            "bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50"
           )}
-          size={collapsed ? "icon" : "default"}
         >
-          {running ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <>
-              <Zap className="h-4 w-4 flex-shrink-0" />
-              {!collapsed && <span className="ml-2">Run Now</span>}
-            </>
-          )}
-        </Button>
+          {running
+            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            : <Zap className="h-3.5 w-3.5" />
+          }
+          {running ? "Running…" : "Run digest"}
+        </button>
       </div>
 
+      {/* Divider */}
+      <div className="mx-3 border-t border-sidebar-border mb-2" />
+
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3 scrollbar-thin">
+      <nav className="flex-1 overflow-y-auto px-2 space-y-0.5 scrollbar-thin">
         {NAV_ITEMS.map(({ href, icon: Icon, label }, i) => {
           const active = location.pathname === href;
           return (
             <Link
               key={href}
               to={href}
-              onClick={() => setMobileOpen(false)}
+              onClick={onNav}
               className={cn(
-                "flex items-center gap-3 mx-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                "relative flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-all duration-150",
                 "opacity-0 animate-slide-in-left",
                 `animate-stagger-${Math.min(i + 1, 5)}`,
                 active
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                collapsed && "justify-center px-2"
+                  : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/70"
               )}
               style={{ animationFillMode: "forwards" }}
             >
-              <Icon className={cn("h-4 w-4 flex-shrink-0", active && "text-primary")} />
-              {!collapsed && label}
-              {!collapsed && active && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
+              <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+              {label}
+              {active && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-foreground opacity-60" />
               )}
             </Link>
           );
         })}
       </nav>
 
-      {/* User + Logout */}
-      <div className={cn("p-3 border-t border-sidebar-border", collapsed && "p-2")}>
-        {!collapsed && (
-          <div className="mb-2 px-3 py-2 rounded-lg bg-sidebar-accent/50">
-            <p className="text-xs font-medium text-sidebar-accent-foreground truncate">{profile?.display_name ?? "User"}</p>
-            <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
-          </div>
-        )}
+      {/* Footer */}
+      <div className="p-3 border-t border-sidebar-border space-y-1">
+        <div className="px-3 py-2">
+          <p className="text-xs font-medium text-sidebar-accent-foreground truncate leading-snug">
+            {profile?.display_name ?? "—"}
+          </p>
+          <p className="text-[11px] text-sidebar-foreground/50 truncate">{user?.email}</p>
+        </div>
         <button
           onClick={handleLogout}
-          className={cn(
-            "flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-200",
-            collapsed && "justify-center"
-          )}
+          className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-xs text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/70 transition-all duration-150"
         >
-          <LogOut className="h-3.5 w-3.5 flex-shrink-0" />
-          {!collapsed && "Sign out"}
+          <LogOut className="h-3 w-3 flex-shrink-0" />
+          Sign out
         </button>
       </div>
     </div>
@@ -150,40 +140,31 @@ export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Desktop sidebar */}
-      <aside
-        className={cn(
-          "hidden md:flex flex-col flex-shrink-0 bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out relative",
-          collapsed ? "w-16" : "w-56"
-        )}
-      >
-        <SidebarContent />
-        {/* Collapse toggle */}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-sidebar border border-sidebar-border flex items-center justify-center text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors z-10 shadow-card"
-        >
-          {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
-        </button>
+      <aside className="hidden md:flex flex-col w-52 flex-shrink-0 bg-sidebar border-r border-sidebar-border">
+        <NavContent />
       </aside>
 
-      {/* Mobile sidebar overlay */}
+      {/* Mobile overlay */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="relative w-64 bg-sidebar border-r border-sidebar-border flex flex-col animate-slide-in-left z-10">
-            <SidebarContent />
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-[2px]" onClick={() => setMobileOpen(false)} />
+          <aside className="relative w-52 bg-sidebar border-r border-sidebar-border flex flex-col animate-slide-in-left z-10 shadow-elevated">
+            <NavContent onNav={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
 
-      {/* Main content */}
+      {/* Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Mobile topbar */}
-        <header className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-card">
-          <button onClick={() => setMobileOpen(true)} className="text-foreground/70 hover:text-foreground transition-colors">
-            <Menu className="h-5 w-5" />
+        {/* Mobile header */}
+        <header className="md:hidden flex items-center gap-3 px-4 h-11 border-b border-border bg-card flex-shrink-0">
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
-          <span className="font-display font-bold text-sm">📜 Boon Scroll</span>
+          <span className="text-sm font-semibold tracking-tight">Boon Scroll</span>
         </header>
 
         <main className="flex-1 overflow-y-auto scrollbar-thin">
