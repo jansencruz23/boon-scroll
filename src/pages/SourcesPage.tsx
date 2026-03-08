@@ -156,6 +156,40 @@ const PRESET_GROUPS: { label: string; emoji: string; sources: { name: string; ty
       { name: "The Hacker News", type: "rss", url: "https://thehackernews.com", rss_url: "https://feeds.feedburner.com/TheHackersNews" },
     ],
   },
+  {
+    label: "Hackathons — Worldwide",
+    emoji: "🏆",
+    sources: [
+      { name: "Devpost Blog", type: "rss", url: "https://blog.devpost.com", rss_url: "https://blog.devpost.com/feed" },
+      { name: "r/hackathons", type: "subreddit", url: "https://reddit.com/r/hackathons", rss_url: "https://www.reddit.com/r/hackathons/.rss" },
+      { name: "Dev.to #hackathon", type: "rss", url: "https://dev.to/t/hackathon", rss_url: "https://dev.to/feed/tag/hackathon" },
+      { name: "HackerEarth Blog", type: "rss", url: "https://www.hackerearth.com/blog", rss_url: "https://www.hackerearth.com/blog/feed/" },
+      { name: "MLH Blog", type: "rss", url: "https://mlh.io/blog", rss_url: "https://mlh.io/blog/rss" },
+      { name: "Devfolio Blog", type: "rss", url: "https://devfolio.co/blog", rss_url: "https://devfolio.co/blog/rss.xml" },
+      { name: "r/learnmachinelearning", type: "subreddit", url: "https://reddit.com/r/learnmachinelearning", rss_url: "https://www.reddit.com/r/learnmachinelearning/.rss" },
+      { name: "Kaggle Blog", type: "rss", url: "https://medium.com/kaggle-blog", rss_url: "https://medium.com/feed/kaggle-blog" },
+      { name: "AngelList Startup Jobs", type: "rss", url: "https://angel.co", rss_url: "https://angel.co/rss" },
+      { name: "TechCrunch Startups", type: "rss", url: "https://techcrunch.com/category/startups", rss_url: "https://techcrunch.com/category/startups/feed/" },
+    ],
+  },
+  {
+    label: "Philippines — Tech & Startups",
+    emoji: "🇵🇭",
+    sources: [
+      { name: "r/Philippines", type: "subreddit", url: "https://reddit.com/r/Philippines", rss_url: "https://www.reddit.com/r/Philippines/.rss" },
+      { name: "r/phtech", type: "subreddit", url: "https://reddit.com/r/phtech", rss_url: "https://www.reddit.com/r/phtech/.rss" },
+      { name: "r/PHJobs", type: "subreddit", url: "https://reddit.com/r/PHJobs", rss_url: "https://www.reddit.com/r/PHJobs/.rss" },
+      { name: "r/phinvest", type: "subreddit", url: "https://reddit.com/r/phinvest", rss_url: "https://www.reddit.com/r/phinvest/.rss" },
+      { name: "Tech In Asia — PH", type: "rss", url: "https://techinasia.com", rss_url: "https://www.techinasia.com/feed" },
+      { name: "Rappler Technology", type: "rss", url: "https://rappler.com/technology", rss_url: "https://www.rappler.com/category/technology/feed/" },
+      { name: "Inquirer Technology", type: "rss", url: "https://technology.inquirer.net", rss_url: "https://technology.inquirer.net/feed" },
+      { name: "Philippine Star Tech", type: "rss", url: "https://philstar.com/technology", rss_url: "https://www.philstar.com/rss/technology" },
+      { name: "BusinessWorld Technology", type: "rss", url: "https://businessworldonline.com", rss_url: "https://businessworldonline.com/feed/" },
+      { name: "Startup PH (Medium)", type: "rss", url: "https://medium.com/startup-ph", rss_url: "https://medium.com/feed/startup-ph" },
+      { name: "QBO Innovation Hub", type: "rss", url: "https://qbo.com.ph/blog", rss_url: "https://qbo.com.ph/blog/feed/" },
+      { name: "DICT Philippines", type: "rss", url: "https://dict.gov.ph/news", rss_url: "https://dict.gov.ph/feed/" },
+    ],
+  },
 ];
 
 // Flat list for upsert
