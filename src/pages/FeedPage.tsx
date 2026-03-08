@@ -218,7 +218,7 @@ export default function FeedPage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"newest" | "confidence">("newest");
-  const [showRelevantOnly, setShowRelevantOnly] = useState(false);
+  const [showRelevantOnly, setShowRelevantOnly] = useState(true);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const PAGE_SIZE = 20;
