@@ -1,15 +1,14 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import {
   Bookmark, BookmarkCheck, ThumbsUp, ThumbsDown, Copy, ExternalLink,
-  Search, AlertCircle, Radio, ChevronDown, ChevronUp, Filter
+  Search, AlertCircle, ChevronDown, ChevronUp, Filter, ArrowUpDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -41,41 +40,47 @@ interface Category {
   color: string;
 }
 
-const CATEGORY_BG: Record<string, string> = {
-  FREE_CERTIFICATION: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  PROMO_OR_TRIAL: "bg-green-500/10 text-green-400 border-green-500/20",
-  TECH_UPDATE: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  NOT_RELEVANT: "bg-red-500/10 text-red-400 border-red-500/20",
+const CATEGORY_STYLES: Record<string, { dot: string; label: string }> = {
+  FREE_CERTIFICATION: { dot: "bg-cat-cert", label: "text-cat-cert" },
+  PROMO_OR_TRIAL:    { dot: "bg-cat-promo", label: "text-cat-promo" },
+  TECH_UPDATE:       { dot: "bg-cat-tech", label: "text-cat-tech" },
+  NOT_RELEVANT:      { dot: "bg-cat-bad", label: "text-cat-bad" },
+  HACKATHON:         { dot: "bg-cat-hackathon", label: "text-cat-hackathon" },
 };
 
 function ArticleSkeleton() {
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-3 animate-pulse-subtle">
+    <div className="py-4 border-b border-border last:border-0 space-y-2.5 animate-pulse-subtle">
       <div className="flex items-center gap-2">
-        <Skeleton className="h-4 w-4 rounded-full" />
-        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-2 w-2 rounded-full" />
+        <Skeleton className="h-3 w-28" />
         <Skeleton className="h-3 w-16 ml-auto" />
       </div>
-      <Skeleton className="h-5 w-4/5" />
+      <Skeleton className="h-4 w-4/5" />
       <Skeleton className="h-3 w-full" />
-      <Skeleton className="h-3 w-3/4" />
-      <div className="flex gap-2">
-        <Skeleton className="h-5 w-20 rounded-full" />
-        <Skeleton className="h-5 w-16 rounded-full" />
-      </div>
+      <Skeleton className="h-3 w-2/3" />
     </div>
   );
 }
 
-function ArticleCard({ article, categories, onUpdate }: { article: Article; categories: Category[]; onUpdate: (id: string, updates: Partial<Article>) => void }) {
+function ArticleCard({
+  article,
+  categories,
+  onUpdate,
+}: {
+  article: Article;
+  categories: Category[];
+  onUpdate: (id: string, updates: Partial<Article>) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const { toast } = useToast();
 
   const cat = categories.find((c) => c.name === article.category_name);
-  const catStyle = CATEGORY_BG[article.category_name] ?? "bg-purple-500/10 text-purple-400 border-purple-500/20";
+  const catStyle = CATEGORY_STYLES[article.category_name] ?? { dot: "bg-cat-other", label: "text-muted-foreground" };
   const timeAgo = article.published_at
     ? formatDistanceToNow(new Date(article.published_at), { addSuffix: true })
     : formatDistanceToNow(new Date(article.fetched_at), { addSuffix: true });
+  const confidence = Math.round(article.confidence * 100);
 
   const toggleSave = async () => {
     const newVal = !article.is_saved;
@@ -83,7 +88,7 @@ function ArticleCard({ article, categories, onUpdate }: { article: Article; cate
     await supabase.from("articles").update({ is_saved: newVal }).eq("id", article.id);
   };
 
-  const setFeedback = async (val: "good" | "bad" | null) => {
+  const setFeedback = async (val: "good" | "bad") => {
     const newVal = article.feedback === val ? null : val;
     onUpdate(article.id, { feedback: newVal });
     await supabase.from("articles").update({ feedback: newVal }).eq("id", article.id);
@@ -91,123 +96,125 @@ function ArticleCard({ article, categories, onUpdate }: { article: Article; cate
 
   const copyLink = () => {
     navigator.clipboard.writeText(article.url);
-    toast({ title: "Link copied!" });
+    toast({ title: "Copied" });
   };
 
-  const confidence = Math.round(article.confidence * 100);
-
   return (
-    <div className={cn(
-      "rounded-xl border bg-card overflow-hidden card-hover opacity-0 animate-fade-in-up",
-      article.is_relevant ? "border-border" : "border-border/50 opacity-60"
-    )} style={{ animationFillMode: "forwards" }}>
-      <div className="p-5">
-        {/* Meta row */}
-        <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
-          <div className="w-3.5 h-3.5 rounded-full bg-muted/80 flex items-center justify-center">
-            <Radio className="h-2 w-2" />
-          </div>
-          <span className="font-medium">{article.source_id?.slice(0, 8) ?? "Unknown"}</span>
-          <span className="text-muted-foreground/50">·</span>
-          <span>{timeAgo}</span>
-          <div className="ml-auto flex items-center gap-1.5">
-            <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium border", catStyle)}>
-              {cat?.emoji ?? "📌"} {cat?.display_name ?? article.category_name}
-            </span>
-            <span className="text-muted-foreground/60 text-xs">{confidence}%</span>
-          </div>
-        </div>
+    <article
+      className={cn(
+        "group py-4 border-b border-border last:border-0 opacity-0 animate-fade-in-up",
+        !article.is_relevant && "opacity-40"
+      )}
+      style={{ animationFillMode: "forwards" }}
+    >
+      {/* Meta line */}
+      <div className="flex items-center gap-2 mb-2 text-[11px] text-muted-foreground">
+        <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", catStyle.dot)} />
+        <span className={cn("font-medium", catStyle.label)}>
+          {cat?.display_name ?? article.category_name}
+        </span>
+        <span className="text-muted-foreground/40">·</span>
+        <span>{timeAgo}</span>
+        <span className="ml-auto font-mono text-[10px] text-muted-foreground/50">{confidence}%</span>
+      </div>
 
-        {/* Title */}
+      {/* Title */}
+      <a
+        href={article.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block text-sm font-semibold text-foreground hover:text-foreground/80 transition-colors leading-snug mb-1.5 tracking-tight"
+      >
+        {article.title}
+      </a>
+
+      {/* Preview */}
+      {article.content_preview && (
+        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-2">
+          {article.content_preview}
+        </p>
+      )}
+
+      {/* Tags */}
+      {article.tags?.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {article.tags.slice(0, 4).map((tag) => (
+            <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* AI reason */}
+      {article.ai_reason && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-start gap-1.5 text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors mb-2 text-left w-full"
+        >
+          <span className="flex-shrink-0 mt-px">—</span>
+          <span className={cn("leading-relaxed", !expanded && "line-clamp-1")}>{article.ai_reason}</span>
+          {expanded
+            ? <ChevronUp className="h-3 w-3 flex-shrink-0 mt-px" />
+            : <ChevronDown className="h-3 w-3 flex-shrink-0 mt-px" />
+          }
+        </button>
+      )}
+
+      {/* Actions — only show on hover on desktop, always on mobile */}
+      <div className="flex items-center gap-0.5 -ml-1.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 md:opacity-0 max-md:opacity-100">
+        <button
+          onClick={toggleSave}
+          className={cn(
+            "flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium transition-all duration-150",
+            article.is_saved
+              ? "text-foreground bg-accent"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent"
+          )}
+        >
+          {article.is_saved
+            ? <BookmarkCheck className="h-3 w-3" />
+            : <Bookmark className="h-3 w-3" />}
+          {article.is_saved ? "Saved" : "Save"}
+        </button>
+        <button
+          onClick={() => setFeedback("good")}
+          className={cn(
+            "p-1.5 rounded transition-all duration-150",
+            article.feedback === "good"
+              ? "text-cat-promo bg-cat-promo/10"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent"
+          )}
+        >
+          <ThumbsUp className="h-3 w-3" />
+        </button>
+        <button
+          onClick={() => setFeedback("bad")}
+          className={cn(
+            "p-1.5 rounded transition-all duration-150",
+            article.feedback === "bad"
+              ? "text-cat-bad bg-cat-bad/10"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent"
+          )}
+        >
+          <ThumbsDown className="h-3 w-3" />
+        </button>
+        <button
+          onClick={copyLink}
+          className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-150 ml-auto"
+        >
+          <Copy className="h-3 w-3" />
+        </button>
         <a
           href={article.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="block font-semibold text-foreground hover:text-primary transition-colors leading-snug mb-2 group"
+          className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-150"
         >
-          {article.title}
-          <ExternalLink className="inline ml-1.5 h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" />
+          <ExternalLink className="h-3 w-3" />
         </a>
-
-        {/* Preview */}
-        {article.content_preview && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{article.content_preview}</p>
-        )}
-
-        {/* Tags */}
-        {article.tags?.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {article.tags.slice(0, 4).map((tag) => (
-              <span key={tag} className="px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground">{tag}</span>
-            ))}
-          </div>
-        )}
-
-        {/* AI Reason (expandable) */}
-        {article.ai_reason && (
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3 group"
-          >
-            <span className="text-primary/60">✦</span>
-            <span className={cn("transition-all", expanded ? "" : "line-clamp-1")}>{article.ai_reason}</span>
-            {expanded ? <ChevronUp className="h-3 w-3 flex-shrink-0" /> : <ChevronDown className="h-3 w-3 flex-shrink-0" />}
-          </button>
-        )}
-
-        {/* Actions */}
-        <div className="flex items-center gap-1 -mx-1 mt-1">
-          <button
-            onClick={toggleSave}
-            className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
-              article.is_saved
-                ? "text-primary bg-primary/10"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent"
-            )}
-          >
-            {article.is_saved ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}
-            {article.is_saved ? "Saved" : "Save"}
-          </button>
-          <button
-            onClick={() => setFeedback("good")}
-            className={cn(
-              "flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs transition-all duration-200",
-              article.feedback === "good"
-                ? "text-green-400 bg-green-500/10"
-                : "text-muted-foreground hover:text-green-400 hover:bg-green-500/10"
-            )}
-          >
-            <ThumbsUp className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => setFeedback("bad")}
-            className={cn(
-              "flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs transition-all duration-200",
-              article.feedback === "bad"
-                ? "text-red-400 bg-red-500/10"
-                : "text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-            )}
-          >
-            <ThumbsDown className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={copyLink}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 ml-auto"
-          >
-            <Copy className="h-3.5 w-3.5" />
-          </button>
-          <a
-            href={article.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -258,9 +265,7 @@ export default function FeedPage() {
     const channel = supabase
       .channel("articles-realtime")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "articles", filter: `user_id=eq.${user.id}` },
-        (payload) => {
-          setArticles((prev) => [payload.new as Article, ...prev]);
-        })
+        (payload) => { setArticles((prev) => [payload.new as Article, ...prev]); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user]);
@@ -277,113 +282,132 @@ export default function FeedPage() {
   };
 
   const loadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchArticles(nextPage);
+    const next = page + 1;
+    setPage(next);
+    fetchArticles(next);
   };
 
   const noGeminiKey = profile && !profile.gemini_api_key;
 
+  const STATIC_TABS = [
+    { name: "all", display_name: "All" },
+    { name: "HACKATHON", display_name: "Hackathons" },
+  ];
+  const allTabs = [...STATIC_TABS, ...categories.map((c) => ({ name: c.name, display_name: c.display_name }))];
+
   return (
-    <div className="max-w-[680px] mx-auto px-4 py-6">
-      {/* Banner: No API key */}
+    <div className="max-w-2xl mx-auto px-6 py-8">
+      {/* API key warning */}
       {noGeminiKey && (
-        <div className="mb-5 flex items-center gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 px-4 py-3 text-sm animate-fade-in">
-          <AlertCircle className="h-4 w-4 text-yellow-400 flex-shrink-0" />
-          <span className="text-yellow-300">Add your Gemini API key in <Link to="/settings" className="font-medium underline underline-offset-2">Settings</Link> to start classifying articles.</span>
+        <div className="mb-6 flex items-center gap-3 rounded-md border border-border bg-muted/50 px-4 py-3 text-xs animate-fade-in">
+          <AlertCircle className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+          <span className="text-muted-foreground">
+            Add your Gemini API key in{" "}
+            <Link to="/settings" className="text-foreground underline underline-offset-2">Settings</Link>{" "}
+            to start classifying articles.
+          </span>
         </div>
       )}
 
-      {/* Page title */}
-      <div className="mb-5 animate-fade-in-up">
-        <h1 className="font-display text-2xl font-bold mb-0.5">Your Feed</h1>
-        <p className="text-sm text-muted-foreground">{articles.length > 0 ? `${articles.length} articles` : "No articles yet"}</p>
+      {/* Header */}
+      <div className="mb-6 animate-fade-in-up">
+        <h1 className="text-xl font-semibold tracking-tight mb-0.5">Feed</h1>
+        <p className="text-xs text-muted-foreground">
+          {articles.length > 0 ? `${articles.length} articles` : "No articles yet"}
+        </p>
       </div>
 
-      {/* Filters */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm pb-4 mb-2 -mx-4 px-4 pt-1 animate-fade-in">
+      {/* Sticky filters */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-4 mb-1 -mx-6 px-6 pt-1 border-b border-border/50 animate-fade-in">
         {/* Category tabs */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-thin pb-2 mb-3">
-          {[{ name: "all", display_name: "All", emoji: "✨" }, { name: "HACKATHON", display_name: "Hackathons", emoji: "🏆" }, ...categories].map((cat) => (
+        <div className="flex gap-1 overflow-x-auto scrollbar-thin pb-3 mb-3 no-scrollbar">
+          {allTabs.map((tab) => (
             <button
-              key={cat.name}
-              onClick={() => setActiveCategory(cat.name)}
+              key={tab.name}
+              onClick={() => setActiveCategory(tab.name)}
               className={cn(
-                "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap",
-                activeCategory === cat.name
-                  ? "bg-primary text-primary-foreground shadow-glow"
-                  : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                "flex-shrink-0 px-2.5 py-1 rounded text-xs font-medium transition-all duration-150 whitespace-nowrap",
+                activeCategory === tab.name
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
               )}
             >
-              {cat.emoji} {cat.display_name}
+              {tab.display_name}
             </button>
           ))}
         </div>
 
-        {/* Search + sort row */}
+        {/* Search + controls */}
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
             <Input
-              placeholder="Search articles…"
+              placeholder="Search…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-8 text-sm bg-muted border-border"
+              className="pl-7 h-7 text-xs bg-muted border-border rounded"
             />
           </div>
-          <Button
-            variant="outline"
-            size="sm"
+          <button
             onClick={() => setSort(sort === "newest" ? "confidence" : "newest")}
-            className="h-8 text-xs gap-1.5 border-border"
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 h-7 rounded text-xs font-medium border transition-all duration-150",
+              "border-border text-muted-foreground hover:text-foreground hover:bg-accent"
+            )}
           >
+            <ArrowUpDown className="h-3 w-3" />
             {sort === "newest" ? "Newest" : "Confidence"}
-          </Button>
-          <Button
-            variant={showRelevantOnly ? "default" : "outline"}
-            size="sm"
+          </button>
+          <button
             onClick={() => setShowRelevantOnly(!showRelevantOnly)}
-            className={cn("h-8 text-xs gap-1.5 border-border", showRelevantOnly && "shadow-glow")}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 h-7 rounded text-xs font-medium border transition-all duration-150",
+              showRelevantOnly
+                ? "border-foreground/30 bg-foreground/5 text-foreground"
+                : "border-border text-muted-foreground hover:text-foreground hover:bg-accent"
+            )}
           >
-            <Filter className="h-3 w-3" /> Relevant
-          </Button>
+            <Filter className="h-3 w-3" />
+            Relevant
+          </button>
         </div>
       </div>
 
-      {/* Articles */}
-      <div className="space-y-3">
+      {/* Article list */}
+      <div>
         {loading && articles.length === 0 ? (
-          Array.from({ length: 5 }).map((_, i) => <ArticleSkeleton key={i} />)
+          Array.from({ length: 6 }).map((_, i) => <ArticleSkeleton key={i} />)
         ) : articles.length === 0 ? (
-          <div className="text-center py-20 animate-fade-in">
-            <div className="text-5xl mb-4 animate-float">📭</div>
-            <h3 className="font-display font-semibold text-lg mb-2">Nothing here yet</h3>
-            <p className="text-muted-foreground text-sm mb-6">
-              Add some sources and run your first digest to see articles.
+          <div className="text-center py-24 animate-fade-in">
+            <p className="text-3xl mb-4 animate-float">∅</p>
+            <h3 className="text-sm font-semibold mb-1.5 tracking-tight">Nothing here yet</h3>
+            <p className="text-xs text-muted-foreground mb-5">
+              Add sources and run your first digest.
             </p>
-            <div className="flex gap-3 justify-center">
-              <Button asChild variant="outline" size="sm">
-                <Link to="/sources">Add Sources</Link>
-              </Button>
-            </div>
+            <Button asChild variant="outline" size="sm" className="text-xs h-7">
+              <Link to="/sources">Add sources</Link>
+            </Button>
           </div>
         ) : (
-          articles.map((article, i) => (
-            <div key={article.id} style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}>
-              <ArticleCard article={article} categories={categories} onUpdate={updateArticle} />
-            </div>
-          ))
-        )}
+          <>
+            {articles.map((article, i) => (
+              <div key={article.id} style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}>
+                <ArticleCard article={article} categories={categories} onUpdate={updateArticle} />
+              </div>
+            ))}
 
-        {hasMore && articles.length > 0 && (
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={loadMore}
-            disabled={loading}
-          >
-            {loading ? <><Skeleton className="h-4 w-4 rounded-full mr-2" /> Loading…</> : "Load more"}
-          </Button>
+            {hasMore && (
+              <div className="pt-4 pb-2">
+                <button
+                  onClick={loadMore}
+                  disabled={loading}
+                  className="w-full py-2 text-xs text-muted-foreground hover:text-foreground border border-border rounded hover:bg-accent transition-all duration-150 disabled:opacity-40"
+                >
+                  {loading ? "Loading…" : "Load more"}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
