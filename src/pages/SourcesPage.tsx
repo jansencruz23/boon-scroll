@@ -4,7 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -13,7 +12,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
-import { Plus, Trash2, Edit2, Loader2, Radio, Globe, Hash, RefreshCw, X } from "lucide-react";
+import { Plus, Trash2, Edit2, Loader2, Radio, Globe, Hash, X, Sparkles, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
@@ -34,20 +33,138 @@ interface Source {
 const TYPE_ICONS = { rss: Radio, subreddit: Hash, website: Globe };
 const TYPE_LABELS = { rss: "RSS", subreddit: "Subreddit", website: "Website" };
 
-const PRESET_SOURCES = [
-  { name: "freeCodeCamp", type: "rss", url: "https://www.freecodecamp.org/news/rss/", rss_url: "https://www.freecodecamp.org/news/rss/" },
-  { name: "Dev.to", type: "rss", url: "https://dev.to/feed", rss_url: "https://dev.to/feed" },
-  { name: "Hacker News", type: "rss", url: "https://news.ycombinator.com/rss", rss_url: "https://news.ycombinator.com/rss" },
-  { name: "TechCrunch", type: "rss", url: "https://techcrunch.com/feed/", rss_url: "https://techcrunch.com/feed/" },
-  { name: "r/artificial", type: "subreddit", url: "https://www.reddit.com/r/artificial/.rss", rss_url: "https://www.reddit.com/r/artificial/.rss" },
-  { name: "r/LocalLLaMA", type: "subreddit", url: "https://www.reddit.com/r/LocalLLaMA/.rss", rss_url: "https://www.reddit.com/r/LocalLLaMA/.rss" },
-  { name: "r/MachineLearning", type: "subreddit", url: "https://www.reddit.com/r/MachineLearning/.rss", rss_url: "https://www.reddit.com/r/MachineLearning/.rss" },
+const PRESET_GROUPS: { label: string; emoji: string; sources: { name: string; type: string; url: string; rss_url: string }[] }[] = [
+  {
+    label: "Tech News",
+    emoji: "🚀",
+    sources: [
+      { name: "Hacker News", type: "rss", url: "https://news.ycombinator.com", rss_url: "https://news.ycombinator.com/rss" },
+      { name: "TechCrunch", type: "rss", url: "https://techcrunch.com", rss_url: "https://techcrunch.com/feed/" },
+      { name: "The Verge", type: "rss", url: "https://theverge.com", rss_url: "https://www.theverge.com/rss/index.xml" },
+      { name: "Wired", type: "rss", url: "https://wired.com", rss_url: "https://www.wired.com/feed/rss" },
+      { name: "Ars Technica", type: "rss", url: "https://arstechnica.com", rss_url: "https://feeds.arstechnica.com/arstechnica/index" },
+      { name: "MIT Technology Review", type: "rss", url: "https://technologyreview.com", rss_url: "https://www.technologyreview.com/feed/" },
+      { name: "VentureBeat", type: "rss", url: "https://venturebeat.com", rss_url: "https://venturebeat.com/feed/" },
+      { name: "ZDNet", type: "rss", url: "https://zdnet.com", rss_url: "https://www.zdnet.com/news/rss.xml" },
+    ],
+  },
+  {
+    label: "AI & Machine Learning",
+    emoji: "🤖",
+    sources: [
+      { name: "OpenAI Blog", type: "rss", url: "https://openai.com/blog", rss_url: "https://openai.com/blog/rss.xml" },
+      { name: "Google AI Blog", type: "rss", url: "https://ai.googleblog.com", rss_url: "https://ai.googleblog.com/feeds/posts/default" },
+      { name: "Hugging Face Blog", type: "rss", url: "https://huggingface.co/blog", rss_url: "https://huggingface.co/blog/feed.xml" },
+      { name: "Towards Data Science", type: "rss", url: "https://towardsdatascience.com", rss_url: "https://towardsdatascience.com/feed" },
+      { name: "The Gradient", type: "rss", url: "https://thegradient.pub", rss_url: "https://thegradient.pub/rss/" },
+      { name: "Import AI (Jack Clark)", type: "rss", url: "https://jack-clark.net", rss_url: "https://jack-clark.net/feed/" },
+    ],
+  },
+  {
+    label: "Developer",
+    emoji: "💻",
+    sources: [
+      { name: "Dev.to", type: "rss", url: "https://dev.to", rss_url: "https://dev.to/feed" },
+      { name: "freeCodeCamp", type: "rss", url: "https://freecodecamp.org/news", rss_url: "https://www.freecodecamp.org/news/rss/" },
+      { name: "CSS-Tricks", type: "rss", url: "https://css-tricks.com", rss_url: "https://css-tricks.com/feed/" },
+      { name: "Smashing Magazine", type: "rss", url: "https://smashingmagazine.com", rss_url: "https://www.smashingmagazine.com/feed/" },
+      { name: "GitHub Blog", type: "rss", url: "https://github.blog", rss_url: "https://github.blog/feed/" },
+      { name: "Stack Overflow Blog", type: "rss", url: "https://stackoverflow.blog", rss_url: "https://stackoverflow.blog/feed/" },
+      { name: "A List Apart", type: "rss", url: "https://alistapart.com", rss_url: "https://alistapart.com/main/feed/" },
+      { name: "Paul Graham Essays", type: "rss", url: "http://paulgraham.com", rss_url: "http://www.aaronsw.com/2002/feeds/pgessays.rss" },
+    ],
+  },
+  {
+    label: "Reddit — Tech",
+    emoji: "🟠",
+    sources: [
+      { name: "r/programming", type: "subreddit", url: "https://reddit.com/r/programming", rss_url: "https://www.reddit.com/r/programming/.rss" },
+      { name: "r/webdev", type: "subreddit", url: "https://reddit.com/r/webdev", rss_url: "https://www.reddit.com/r/webdev/.rss" },
+      { name: "r/javascript", type: "subreddit", url: "https://reddit.com/r/javascript", rss_url: "https://www.reddit.com/r/javascript/.rss" },
+      { name: "r/typescript", type: "subreddit", url: "https://reddit.com/r/typescript", rss_url: "https://www.reddit.com/r/typescript/.rss" },
+      { name: "r/reactjs", type: "subreddit", url: "https://reddit.com/r/reactjs", rss_url: "https://www.reddit.com/r/reactjs/.rss" },
+      { name: "r/Python", type: "subreddit", url: "https://reddit.com/r/Python", rss_url: "https://www.reddit.com/r/Python/.rss" },
+      { name: "r/devops", type: "subreddit", url: "https://reddit.com/r/devops", rss_url: "https://www.reddit.com/r/devops/.rss" },
+      { name: "r/netsec", type: "subreddit", url: "https://reddit.com/r/netsec", rss_url: "https://www.reddit.com/r/netsec/.rss" },
+    ],
+  },
+  {
+    label: "Reddit — AI",
+    emoji: "🤖",
+    sources: [
+      { name: "r/artificial", type: "subreddit", url: "https://reddit.com/r/artificial", rss_url: "https://www.reddit.com/r/artificial/.rss" },
+      { name: "r/LocalLLaMA", type: "subreddit", url: "https://reddit.com/r/LocalLLaMA", rss_url: "https://www.reddit.com/r/LocalLLaMA/.rss" },
+      { name: "r/MachineLearning", type: "subreddit", url: "https://reddit.com/r/MachineLearning", rss_url: "https://www.reddit.com/r/MachineLearning/.rss" },
+      { name: "r/ChatGPT", type: "subreddit", url: "https://reddit.com/r/ChatGPT", rss_url: "https://www.reddit.com/r/ChatGPT/.rss" },
+      { name: "r/OpenAI", type: "subreddit", url: "https://reddit.com/r/OpenAI", rss_url: "https://www.reddit.com/r/OpenAI/.rss" },
+      { name: "r/singularity", type: "subreddit", url: "https://reddit.com/r/singularity", rss_url: "https://www.reddit.com/r/singularity/.rss" },
+    ],
+  },
+  {
+    label: "Reddit — Deals & Free",
+    emoji: "💰",
+    sources: [
+      { name: "r/learnprogramming", type: "subreddit", url: "https://reddit.com/r/learnprogramming", rss_url: "https://www.reddit.com/r/learnprogramming/.rss" },
+      { name: "r/cscareerquestions", type: "subreddit", url: "https://reddit.com/r/cscareerquestions", rss_url: "https://www.reddit.com/r/cscareerquestions/.rss" },
+      { name: "r/forhire", type: "subreddit", url: "https://reddit.com/r/forhire", rss_url: "https://www.reddit.com/r/forhire/.rss" },
+      { name: "r/SomebodyMakeThis", type: "subreddit", url: "https://reddit.com/r/SomebodyMakeThis", rss_url: "https://www.reddit.com/r/SomebodyMakeThis/.rss" },
+      { name: "r/deals", type: "subreddit", url: "https://reddit.com/r/deals", rss_url: "https://www.reddit.com/r/deals/.rss" },
+    ],
+  },
+  {
+    label: "Newsletters & Blogs",
+    emoji: "📰",
+    sources: [
+      { name: "Benedict Evans", type: "rss", url: "https://www.ben-evans.com", rss_url: "https://www.ben-evans.com/benedictevans/rss.xml" },
+      { name: "Stratechery", type: "rss", url: "https://stratechery.com", rss_url: "https://stratechery.com/feed/" },
+      { name: "Morning Brew", type: "rss", url: "https://morningbrew.com", rss_url: "https://www.morningbrew.com/daily/stories.rss" },
+      { name: "Lenny's Newsletter", type: "rss", url: "https://www.lennysnewsletter.com", rss_url: "https://www.lennysnewsletter.com/feed" },
+      { name: "TLDR Newsletter", type: "rss", url: "https://tldr.tech", rss_url: "https://tldr.tech/api/rss/tech" },
+    ],
+  },
+  {
+    label: "X / Twitter (via Nitter)",
+    emoji: "🐦",
+    sources: [
+      { name: "Sam Altman (X)", type: "rss", url: "https://x.com/sama", rss_url: "https://nitter.net/sama/rss" },
+      { name: "Andrej Karpathy (X)", type: "rss", url: "https://x.com/karpathy", rss_url: "https://nitter.net/karpathy/rss" },
+      { name: "Yann LeCun (X)", type: "rss", url: "https://x.com/ylecun", rss_url: "https://nitter.net/ylecun/rss" },
+      { name: "Paul Graham (X)", type: "rss", url: "https://x.com/paulg", rss_url: "https://nitter.net/paulg/rss" },
+      { name: "Pieter Levels (X)", type: "rss", url: "https://x.com/levelsio", rss_url: "https://nitter.net/levelsio/rss" },
+      { name: "DHH (X)", type: "rss", url: "https://x.com/dhh", rss_url: "https://nitter.net/dhh/rss" },
+    ],
+  },
+  {
+    label: "Cloud & DevOps",
+    emoji: "☁️",
+    sources: [
+      { name: "AWS News Blog", type: "rss", url: "https://aws.amazon.com/blogs/aws", rss_url: "https://aws.amazon.com/blogs/aws/feed/" },
+      { name: "Google Cloud Blog", type: "rss", url: "https://cloud.google.com/blog", rss_url: "https://cloudblog.withgoogle.com/rss/" },
+      { name: "Azure Blog", type: "rss", url: "https://azure.microsoft.com/en-us/blog", rss_url: "https://azure.microsoft.com/en-us/blog/feed/" },
+      { name: "HashiCorp Blog", type: "rss", url: "https://www.hashicorp.com/blog", rss_url: "https://www.hashicorp.com/blog/feed.xml" },
+      { name: "Kubernetes Blog", type: "rss", url: "https://kubernetes.io/blog", rss_url: "https://kubernetes.io/feed.xml" },
+    ],
+  },
+  {
+    label: "Security",
+    emoji: "🔒",
+    sources: [
+      { name: "Krebs on Security", type: "rss", url: "https://krebsonsecurity.com", rss_url: "https://krebsonsecurity.com/feed/" },
+      { name: "Schneier on Security", type: "rss", url: "https://schneier.com", rss_url: "https://www.schneier.com/feed/atom" },
+      { name: "Troy Hunt Blog", type: "rss", url: "https://troyhunt.com", rss_url: "https://feeds.feedburner.com/TroyHunt" },
+      { name: "Dark Reading", type: "rss", url: "https://darkreading.com", rss_url: "https://www.darkreading.com/rss.xml" },
+      { name: "The Hacker News", type: "rss", url: "https://thehackernews.com", rss_url: "https://feeds.feedburner.com/TheHackersNews" },
+    ],
+  },
 ];
+
+// Flat list for upsert
+const ALL_PRESETS = PRESET_GROUPS.flatMap((g) => g.sources);
 
 function SourceCard({ source, onToggle, onDelete, onEdit }: { source: Source; onToggle: (id: string, val: boolean) => void; onDelete: (id: string) => void; onEdit: (source: Source) => void }) {
   const Icon = TYPE_ICONS[source.type as keyof typeof TYPE_ICONS] ?? Globe;
   return (
-    <div className={cn("rounded-xl border bg-card p-4 card-hover animate-fade-in-up", !source.is_active && "opacity-60")}>
+    <div className={cn("rounded-xl border bg-card p-4 card-hover animate-fade-in-up", !source.is_active && "opacity-50")}>
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
           <Icon className="h-4 w-4 text-muted-foreground" />
@@ -79,11 +196,7 @@ function SourceCard({ source, onToggle, onDelete, onEdit }: { source: Source; on
           )}
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <Switch
-            checked={source.is_active}
-            onCheckedChange={(val) => onToggle(source.id, val)}
-            className="scale-75"
-          />
+          <Switch checked={source.is_active} onCheckedChange={(val) => onToggle(source.id, val)} className="scale-75" />
           <button onClick={() => onEdit(source)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
             <Edit2 className="h-3.5 w-3.5" />
           </button>
@@ -102,11 +215,14 @@ export default function SourcesPage() {
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [presetsOpen, setPresetsOpen] = useState(false);
   const [editingSource, setEditingSource] = useState<Source | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [addingPresets, setAddingPresets] = useState(false);
+  const [selectedPresets, setSelectedPresets] = useState<Set<string>>(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(["Tech News"]));
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -148,23 +264,52 @@ export default function SourcesPage() {
     toast({ title: "Source deleted" });
   };
 
-  const addPresets = async () => {
-    if (!user) return;
+  const togglePreset = (name: string) => {
+    setSelectedPresets((prev) => {
+      const next = new Set(prev);
+      next.has(name) ? next.delete(name) : next.add(name);
+      return next;
+    });
+  };
+
+  const toggleGroupExpand = (label: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      next.has(label) ? next.delete(label) : next.add(label);
+      return next;
+    });
+  };
+
+  const selectAllInGroup = (group: typeof PRESET_GROUPS[0]) => {
+    const allSelected = group.sources.every((s) => selectedPresets.has(s.name));
+    setSelectedPresets((prev) => {
+      const next = new Set(prev);
+      group.sources.forEach((s) => allSelected ? next.delete(s.name) : next.add(s.name));
+      return next;
+    });
+  };
+
+  const addSelectedPresets = async () => {
+    if (!user || selectedPresets.size === 0) return;
     setAddingPresets(true);
+    const toAdd = ALL_PRESETS.filter((s) => selectedPresets.has(s.name));
     const { error } = await supabase.from("sources").upsert(
-      PRESET_SOURCES.map((s) => ({ ...s, user_id: user.id })),
+      toAdd.map((s) => ({ ...s, user_id: user.id })),
       { onConflict: "user_id,name" }
     );
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { toast({ title: "Preset sources added!" }); fetchSources(); }
+    else {
+      toast({ title: `${selectedPresets.size} source${selectedPresets.size > 1 ? "s" : ""} added!` });
+      setPresetsOpen(false);
+      setSelectedPresets(new Set());
+      fetchSources();
+    }
     setAddingPresets(false);
   };
 
   const addTag = (t: string) => {
     const trimmed = t.trim();
-    if (trimmed && !form.category_tags.includes(trimmed)) {
-      setForm((f) => ({ ...f, category_tags: [...f.category_tags, trimmed] }));
-    }
+    if (trimmed && !form.category_tags.includes(trimmed)) setForm((f) => ({ ...f, category_tags: [...f.category_tags, trimmed] }));
     setTagInput("");
   };
 
@@ -185,9 +330,9 @@ export default function SourcesPage() {
           <p className="text-sm text-muted-foreground mt-0.5">{sources.length} sources configured</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={addPresets} disabled={addingPresets} className="gap-1.5">
-            {addingPresets ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            <span className="hidden sm:inline">Add presets</span>
+          <Button variant="outline" size="sm" onClick={() => setPresetsOpen(true)} className="gap-1.5">
+            <Sparkles className="h-4 w-4" />
+            <span className="hidden sm:inline">Browse presets</span>
           </Button>
           <Button size="sm" onClick={openAdd} className="gap-1.5">
             <Plus className="h-4 w-4" /> Add source
@@ -207,19 +352,98 @@ export default function SourcesPage() {
           <h3 className="font-display font-semibold text-lg mb-2">No sources yet</h3>
           <p className="text-sm text-muted-foreground mb-6">Add RSS feeds, subreddits, or websites to start collecting articles.</p>
           <div className="flex gap-3 justify-center">
-            <Button onClick={addPresets} disabled={addingPresets}>⚡ Add popular tech sources</Button>
+            <Button onClick={() => setPresetsOpen(true)}><Sparkles className="h-4 w-4 mr-1.5" /> Browse presets</Button>
             <Button variant="outline" onClick={openAdd}>Add custom</Button>
           </div>
         </div>
       ) : (
         <div className="space-y-3">
           {sources.map((s, i) => (
-            <div key={s.id} style={{ animationDelay: `${i * 50}ms` }}>
+            <div key={s.id} style={{ animationDelay: `${i * 40}ms` }}>
               <SourceCard source={s} onToggle={handleToggle} onDelete={handleDelete} onEdit={openEdit} />
             </div>
           ))}
         </div>
       )}
+
+      {/* Preset Picker Dialog */}
+      <Dialog open={presetsOpen} onOpenChange={setPresetsOpen}>
+        <DialogContent className="max-w-lg bg-card border-border max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="font-display">Browse preset sources</DialogTitle>
+            <p className="text-sm text-muted-foreground">{selectedPresets.size} selected</p>
+          </DialogHeader>
+
+          <div className="overflow-y-auto flex-1 space-y-2 pr-1 -mr-1">
+            {PRESET_GROUPS.map((group) => {
+              const isExpanded = expandedGroups.has(group.label);
+              const allSelected = group.sources.every((s) => selectedPresets.has(s.name));
+              const someSelected = group.sources.some((s) => selectedPresets.has(s.name));
+              return (
+                <div key={group.label} className="rounded-xl border border-border overflow-hidden">
+                  <div className="flex items-center gap-2 px-3 py-2.5 bg-muted/40 cursor-pointer select-none" onClick={() => toggleGroupExpand(group.label)}>
+                    <span className="text-base">{group.emoji}</span>
+                    <span className="font-medium text-sm flex-1">{group.label}</span>
+                    <button
+                      className={cn(
+                        "text-xs px-2 py-0.5 rounded-full border transition-all",
+                        allSelected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : someSelected
+                          ? "bg-primary/20 text-primary border-primary/30"
+                          : "bg-transparent text-muted-foreground border-border hover:border-primary/50"
+                      )}
+                      onClick={(e) => { e.stopPropagation(); selectAllInGroup(group); }}
+                    >
+                      {allSelected ? "Deselect all" : "Select all"}
+                    </button>
+                    {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                  </div>
+                  {isExpanded && (
+                    <div className="divide-y divide-border/50">
+                      {group.sources.map((s) => {
+                        const selected = selectedPresets.has(s.name);
+                        return (
+                          <button
+                            key={s.name}
+                            onClick={() => togglePreset(s.name)}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-3 py-2 text-left transition-colors",
+                              selected ? "bg-primary/5" : "hover:bg-muted/40"
+                            )}
+                          >
+                            <div className={cn(
+                              "w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all",
+                              selected ? "bg-primary border-primary" : "border-border"
+                            )}>
+                              {selected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{s.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{s.url}</p>
+                            </div>
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground flex-shrink-0">
+                              {s.type === "subreddit" ? "Reddit" : "RSS"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <DialogFooter className="pt-3 border-t border-border">
+            <Button variant="ghost" onClick={() => setPresetsOpen(false)}>Cancel</Button>
+            <Button onClick={addSelectedPresets} disabled={selectedPresets.size === 0 || addingPresets} className="gap-1.5">
+              {addingPresets ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Add {selectedPresets.size > 0 ? selectedPresets.size : ""} source{selectedPresets.size !== 1 ? "s" : ""}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
