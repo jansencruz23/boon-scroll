@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, ChevronUp, CheckCircle, XCircle, Loader2, Clock } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow, format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 
 interface DigestRun {
   id: string;
@@ -21,22 +20,14 @@ interface DigestRun {
   created_at: string;
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    completed: "bg-green-500/10 text-green-400 border-green-500/20",
-    running: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    failed: "bg-red-500/10 text-red-400 border-red-500/20",
-  };
-  const icons: Record<string, React.ReactNode> = {
-    completed: <CheckCircle className="h-3 w-3" />,
-    running: <Loader2 className="h-3 w-3 animate-spin" />,
-    failed: <XCircle className="h-3 w-3" />,
+function StatusPip({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    completed: "bg-cat-promo",
+    running: "bg-cat-tech animate-pulse",
+    failed: "bg-cat-bad",
   };
   return (
-    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border", styles[status] ?? "bg-muted text-muted-foreground border-border")}>
-      {icons[status]}
-      {status}
-    </span>
+    <span className={cn("inline-block w-1.5 h-1.5 rounded-full flex-shrink-0", map[status] ?? "bg-muted-foreground")} />
   );
 }
 
@@ -48,54 +39,54 @@ function RunRow({ run }: { run: DigestRun }) {
   const errorLog = Array.isArray(run.error_log) ? run.error_log : [];
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in-up card-hover">
-      <div className="flex items-center gap-4 px-4 py-3">
+    <div className="border-b border-border last:border-0 animate-fade-in-up">
+      <div className="flex items-center gap-3 py-3.5">
+        <StatusPip status={run.status} />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-0.5">
-            <StatusBadge status={run.status} />
-            <span className="text-xs text-muted-foreground capitalize">{run.trigger}</span>
-            {run.email_sent && (
-              <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">📧 emailed</span>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {format(new Date(run.started_at), "MMM d, yyyy · HH:mm")}
+          <p className="text-sm font-medium tracking-tight">
+            {format(new Date(run.started_at), "MMM d, yyyy")}
+            <span className="text-muted-foreground font-normal ml-1.5 text-xs">
+              {format(new Date(run.started_at), "HH:mm")}
+            </span>
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            {run.trigger}
             {duration !== null && ` · ${duration}s`}
+            {run.email_sent && " · emailed"}
           </p>
         </div>
-        <div className="flex items-center gap-4 text-xs text-right flex-shrink-0">
+        <div className="flex items-center gap-4 text-right flex-shrink-0">
           <div>
-            <div className="font-semibold text-foreground">{run.total_fetched}</div>
-            <div className="text-muted-foreground">fetched</div>
+            <p className="text-xs font-semibold">{run.total_fetched}</p>
+            <p className="text-[10px] text-muted-foreground">fetched</p>
           </div>
           <div>
-            <div className="font-semibold text-primary">{run.total_passed}</div>
-            <div className="text-muted-foreground">passed</div>
+            <p className="text-xs font-semibold text-cat-promo">{run.total_passed}</p>
+            <p className="text-[10px] text-muted-foreground">passed</p>
           </div>
           {run.total_errors > 0 && (
             <div>
-              <div className="font-semibold text-destructive">{run.total_errors}</div>
-              <div className="text-muted-foreground">errors</div>
+              <p className="text-xs font-semibold text-cat-bad">{run.total_errors}</p>
+              <p className="text-[10px] text-muted-foreground">errors</p>
             </div>
           )}
         </div>
         {errorLog.length > 0 && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+            className="p-1 text-muted-foreground hover:text-foreground transition-colors"
           >
-            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </button>
         )}
       </div>
       {expanded && errorLog.length > 0 && (
-        <div className="border-t border-border px-4 py-3 bg-muted/30 animate-fade-in">
-          <p className="text-xs font-medium text-muted-foreground mb-2">Error details</p>
-          <div className="space-y-1.5">
-            {(errorLog as Array<{source?: string; error?: string; message?: string}>).map((entry, i) => (
-              <div key={i} className="text-xs rounded-lg bg-muted/50 px-3 py-2 font-mono">
-                {entry.source && <span className="text-primary">[{entry.source}] </span>}
-                <span className="text-destructive/80">{entry.error ?? entry.message ?? JSON.stringify(entry)}</span>
+        <div className="pb-3 animate-fade-in">
+          <div className="rounded-md bg-muted/50 border border-border p-3 space-y-1.5">
+            {(errorLog as Array<{ source?: string; error?: string; message?: string }>).map((entry, i) => (
+              <div key={i} className="text-[11px] font-mono">
+                {entry.source && <span className="text-cat-tech">[{entry.source}] </span>}
+                <span className="text-cat-bad/80">{entry.error ?? entry.message ?? JSON.stringify(entry)}</span>
               </div>
             ))}
           </div>
@@ -136,28 +127,38 @@ export default function RunsPage() {
   }, [user]);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
+    <div className="max-w-2xl mx-auto px-6 py-8">
       <div className="mb-6 animate-fade-in-up">
-        <h1 className="font-display text-2xl font-bold">Run History</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Past digest runs and their results</p>
+        <h1 className="text-xl font-semibold tracking-tight">Run History</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">Past digest runs and their results</p>
       </div>
 
       {loading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-20 rounded-xl border border-border bg-card animate-pulse-subtle" />
+        <div className="space-y-0">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="py-3.5 border-b border-border flex items-center gap-3 animate-pulse-subtle">
+              <div className="w-1.5 h-1.5 rounded-full bg-muted flex-shrink-0" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3.5 bg-muted rounded w-32" />
+                <div className="h-3 bg-muted rounded w-20" />
+              </div>
+              <div className="flex gap-4">
+                <div className="h-6 w-8 bg-muted rounded" />
+                <div className="h-6 w-8 bg-muted rounded" />
+              </div>
+            </div>
           ))}
         </div>
       ) : runs.length === 0 ? (
-        <div className="text-center py-20 animate-fade-in">
-          <div className="text-5xl mb-4 animate-float">📊</div>
-          <h3 className="font-display font-semibold text-lg mb-2">No runs yet</h3>
-          <p className="text-sm text-muted-foreground">Click "Run Now" in the sidebar to fetch your first digest.</p>
+        <div className="text-center py-24 animate-fade-in">
+          <p className="text-3xl mb-4 animate-float">∅</p>
+          <h3 className="text-sm font-semibold mb-1.5 tracking-tight">No runs yet</h3>
+          <p className="text-xs text-muted-foreground">Click "Run digest" in the sidebar to start.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div>
           {runs.map((run, i) => (
-            <div key={run.id} style={{ animationDelay: `${i * 40}ms` }}>
+            <div key={run.id} style={{ animationDelay: `${i * 30}ms` }}>
               <RunRow run={run} />
             </div>
           ))}
