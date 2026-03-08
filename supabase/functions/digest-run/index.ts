@@ -225,9 +225,11 @@ Deno.serve(async (req: Request) => {
       for (const item of newItems) {
         if (!item.title || !item.link) continue;
 
+        const cleanDescription = stripHtml(item.description ?? "");
+
         const classification = await classifyWithGemini(
           profile.gemini_api_key!,
-          { title: item.title, description: item.description?.replace(/<[^>]+>/g, "").slice(0, 500) ?? "" },
+          { title: item.title, description: cleanDescription.slice(0, 500) },
           categories,
           profile.interest_keywords ?? "",
           profile.strictness,
@@ -240,7 +242,7 @@ Deno.serve(async (req: Request) => {
           source_id: source.id,
           title: item.title.slice(0, 500),
           url: item.link,
-          content_preview: item.description?.replace(/<[^>]+>/g, "").slice(0, 300) ?? "",
+          content_preview: cleanDescription.slice(0, 300),
           author: item.author?.slice(0, 200) ?? "",
           published_at: item.pubDate ? new Date(item.pubDate).toISOString() : null,
           category_id: catRecord?.id ?? null,
