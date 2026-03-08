@@ -1,73 +1,94 @@
-# Welcome to your Lovable project
+# 📡 GoonScroll
 
-## Project info
+**GoonScroll** is a personal AI-powered content digest app. Add RSS feeds, subreddits, newsletters, and X/Twitter accounts — then let Gemini AI classify, filter, and surface only what actually matters to you.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+🔗 **Live app**: https://goon-scroll.lovable.app
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## ✨ Features
 
-**Use Lovable**
+- **50+ preset sources** — Tech news, AI/ML, Reddit communities, newsletters, X/Twitter via Nitter, cloud & security blogs
+- **AI classification** — Gemini 2.5 Flash categorises every article into Free Certifications, Promos & Trials, Tech Updates, or Not Relevant
+- **Smart filtering** — Confidence threshold, strictness level, interest keywords — tune the signal-to-noise ratio
+- **Real-time feed** — New articles appear instantly via Supabase Realtime
+- **Save & feedback** — Bookmark articles and give thumbs up/down to improve future runs
+- **Digest runs** — Trigger a fetch manually or schedule automated runs; full run history with error logs
+- **Dark-first UI** — Clean, animated interface with no generic AI aesthetics
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠 Tech Stack
 
-**Use your preferred IDE**
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18 + TypeScript + Vite |
+| Styling | Tailwind CSS + shadcn/ui |
+| Backend | Supabase (Postgres + RLS + Realtime) |
+| Edge Functions | Deno (RSS fetching + Gemini classification) |
+| AI | Google Gemini 2.5 Flash |
+| Auth | Supabase Auth (email/password) |
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## 🚀 Getting Started
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repo
 git clone <YOUR_GIT_URL>
+cd goon-scroll
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the dev server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+You'll need a **Gemini API key** (free at [Google AI Studio](https://aistudio.google.com)) — add it in Settings after signing up.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## 📁 Project Structure
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+src/
+├── components/       # AppLayout, NavLink, ProtectedRoute, shadcn/ui
+├── contexts/         # AuthContext (Supabase session)
+├── hooks/            # use-toast, use-mobile
+├── integrations/     # Supabase client + generated types
+├── pages/            # Feed, Sources, Filters, Saved, Runs, Settings, Onboarding
+supabase/
+├── functions/        # digest-run edge function (RSS + Gemini)
+├── migrations/       # SQL schema migrations
+```
 
-## What technologies are used for this project?
+---
 
-This project is built with:
+## 🔑 Environment Variables
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Managed automatically via Lovable Cloud. If self-hosting, set:
 
-## How can I deploy this project?
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## 📦 Deployment
 
-Yes, you can!
+Open [Lovable](https://lovable.dev) → **Share → Publish** for instant deployment.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+For self-hosting, build with:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```sh
+npm run build
+# Deploy the dist/ folder to any static host (Vercel, Netlify, Cloudflare Pages, etc.)
+```
+
+---
+
+## 📄 License
+
+MIT
