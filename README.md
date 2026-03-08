@@ -1,24 +1,24 @@
-# 📡 GoonScroll
+# GoonScroll
 
-**GoonScroll** is a personal AI-powered content digest app. Add RSS feeds, subreddits, newsletters, and X/Twitter accounts — then let Gemini AI classify, filter, and surface only what actually matters to you.
+GoonScroll is a personal content digest app powered by Gemini AI. You add RSS feeds, subreddits, newsletters, and X/Twitter accounts, and it classifies every article so only the stuff that actually matters to you makes it into your feed.
 
-🔗 **Live app**: https://goon-scroll.lovable.app
-
----
-
-## ✨ Features
-
-- **50+ preset sources** — Tech news, AI/ML, Reddit communities, newsletters, X/Twitter via Nitter, cloud & security blogs
-- **AI classification** — Gemini 2.5 Flash categorises every article into Free Certifications, Promos & Trials, Tech Updates, or Not Relevant
-- **Smart filtering** — Confidence threshold, strictness level, interest keywords — tune the signal-to-noise ratio
-- **Real-time feed** — New articles appear instantly via Supabase Realtime
-- **Save & feedback** — Bookmark articles and give thumbs up/down to improve future runs
-- **Digest runs** — Trigger a fetch manually or schedule automated runs; full run history with error logs
-- **Dark-first UI** — Clean, animated interface with no generic AI aesthetics
+Live app: https://boon-scroll.lovable.app
 
 ---
 
-## 🛠 Tech Stack
+## Features
+
+- Over 50 preset sources across tech news, AI/ML, Reddit communities, newsletters, X/Twitter via Nitter, cloud, security, hackathons, and Philippine tech
+- Gemini 2.5 Flash classifies each article into Free Certifications, Promos & Trials, Tech Updates, Hackathons, or Not Relevant
+- Adjustable confidence threshold, strictness level, and interest keywords to tune the signal-to-noise ratio
+- Real-time feed — new articles appear without a page refresh
+- Save articles and give thumbs up/down feedback to improve future runs
+- Manual or scheduled digest runs with full run history and error logs
+- Dark-first UI built with Tailwind CSS and shadcn/ui
+
+---
+
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -31,25 +31,20 @@
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ```sh
-# Clone the repo
 git clone <YOUR_GIT_URL>
 cd goon-scroll
-
-# Install dependencies
 npm install
-
-# Start the dev server
 npm run dev
 ```
 
-You'll need a **Gemini API key** (free at [Google AI Studio](https://aistudio.google.com)) — add it in Settings after signing up.
+You'll need a Gemini API key — it's free at [Google AI Studio](https://aistudio.google.com). Add it in Settings after signing up.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -65,7 +60,7 @@ supabase/
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
 Managed automatically via Lovable Cloud. If self-hosting, set:
 
@@ -76,19 +71,19 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key
 
 ---
 
-## 📦 Deployment
+## Deployment
 
-Open [Lovable](https://lovable.dev) → **Share → Publish** for instant deployment.
+Open [Lovable](https://lovable.dev) and hit Share → Publish for instant deployment.
 
-For self-hosting, build with:
+For self-hosting:
 
 ```sh
 npm run build
-# Deploy the dist/ folder to any static host (Vercel, Netlify, Cloudflare Pages, etc.)
+# deploy the dist/ folder to Vercel, Netlify, Cloudflare Pages, etc.
 ```
 
 ---
 
-## 📄 License
+## License
 
 MIT
