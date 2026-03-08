@@ -304,7 +304,7 @@ export default function FeedPage() {
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm pb-4 mb-2 -mx-4 px-4 pt-1 animate-fade-in">
         {/* Category tabs */}
         <div className="flex gap-1.5 overflow-x-auto scrollbar-thin pb-2 mb-3">
-          {[{ name: "all", display_name: "All", emoji: "✨" }, ...categories].map((cat) => (
+          {[{ name: "all", display_name: "All", emoji: "✨" }, { name: "HACKATHON", display_name: "Hackathons", emoji: "🏆" }, ...categories].map((cat) => (
             <button
               key={cat.name}
               onClick={() => setActiveCategory(cat.name)}
