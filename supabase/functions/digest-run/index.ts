@@ -10,6 +10,15 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+function stripHtml(html: string): string {
+  return html
+    .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, (m) => m.slice(9, -3))
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ")
+    .replace(/&#\d+;/g, "").replace(/\s{2,}/g, " ").trim();
+}
+
 async function parseRSS(url: string): Promise<Array<{ title: string; link: string; description: string; pubDate: string; author: string }>> {
   const res = await fetch(url, {
     headers: { "User-Agent": "BoonScroll/1.0 RSS Reader" },
@@ -78,13 +87,13 @@ Article preview: ${article.description?.slice(0, 300) ?? ""}`;
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 256 },
+            generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
           }),
           signal: AbortSignal.timeout(30000),
         }
@@ -216,9 +225,11 @@ Deno.serve(async (req: Request) => {
       for (const item of newItems) {
         if (!item.title || !item.link) continue;
 
+        const cleanDescription = stripHtml(item.description ?? "");
+
         const classification = await classifyWithGemini(
           profile.gemini_api_key!,
-          { title: item.title, description: item.description?.replace(/<[^>]+>/g, "").slice(0, 500) ?? "" },
+          { title: item.title, description: cleanDescription.slice(0, 500) },
           categories,
           profile.interest_keywords ?? "",
           profile.strictness,
@@ -231,7 +242,7 @@ Deno.serve(async (req: Request) => {
           source_id: source.id,
           title: item.title.slice(0, 500),
           url: item.link,
-          content_preview: item.description?.replace(/<[^>]+>/g, "").slice(0, 300) ?? "",
+          content_preview: cleanDescription.slice(0, 300),
           author: item.author?.slice(0, 200) ?? "",
           published_at: item.pubDate ? new Date(item.pubDate).toISOString() : null,
           category_id: catRecord?.id ?? null,
