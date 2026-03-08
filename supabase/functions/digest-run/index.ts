@@ -10,6 +10,15 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+function stripHtml(html: string): string {
+  return html
+    .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, (m) => m.slice(9, -3))
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ")
+    .replace(/&#\d+;/g, "").replace(/\s{2,}/g, " ").trim();
+}
+
 async function parseRSS(url: string): Promise<Array<{ title: string; link: string; description: string; pubDate: string; author: string }>> {
   const res = await fetch(url, {
     headers: { "User-Agent": "BoonScroll/1.0 RSS Reader" },
