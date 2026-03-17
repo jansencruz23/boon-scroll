@@ -1,4 +1,4 @@
-# GoonScroll
+# BoonScroll
 
 GoonScroll is a personal content digest app powered by Gemini AI. You add RSS feeds, subreddits, newsletters, and X/Twitter accounts, and it classifies every article so only the stuff that actually matters to you makes it into your feed.
 
